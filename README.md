@@ -40,22 +40,12 @@ composer require caobowen/kimi-nexus:dev-main
 use KimiNexus\Core\ApiConfig;
 use KimiNexus\Integrations\BusinessGovtNz\BusinessGovtNzGateway;
 
-$config = new ApiConfig(
-    'https://api.business.govt.nz/',
-    'your-api-key',
-    10.0,
-    [
-        'Accept' => 'application/json',
-    ]
-);
+$config = new ApiConfig('https://api.business.govt.nz/');
 
 $client = BusinessGovtNzGateway::make($config);
 
-// 默认请求 GET /helloworld
+// 示例接口：不发真实 HTTP，请求结果固定返回 helloworld
 $result = $client->helloWorld();
-
-// 如果文档里的联通测试路径不是 /helloworld，可覆盖路径
-// $result = $client->helloWorld('/v1/health');
 
 var_dump($result);
 ```
@@ -63,7 +53,7 @@ var_dump($result);
 ## 已提供的 Business.govt.nz 入口
 
 - `BusinessGovtNzGateway::make($config)`: 快速创建客户端入口
-- `BusinessGovtNzApiClient::helloWorld($path = '/helloworld')`: HelloWorld 联通接口
+- `BusinessGovtNzApiClient::helloWorld($path = '/helloworld')`: HelloWorld 本地示例接口（固定返回）
 
 ## 后续建议
 
