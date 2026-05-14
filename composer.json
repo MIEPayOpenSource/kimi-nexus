@@ -2,7 +2,25 @@
   "name": "caobowen/kimi-nexus",
   "description": "A reusable Composer package for integrating multiple third-party APIs across company projects.",
   "type": "library",
-  "license": "proprietary",
+  "license": "MIT",
+  "homepage": "https://github.com/MIEPayOpenSource/kimi-nexus",
+  "keywords": [
+    "composer",
+    "sdk",
+    "api",
+    "integration",
+    "php"
+  ],
+  "authors": [
+    {
+      "name": "MIEPay Open Source",
+      "homepage": "https://github.com/MIEPayOpenSource"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/MIEPayOpenSource/kimi-nexus/issues",
+    "source": "https://github.com/MIEPayOpenSource/kimi-nexus"
+  },
   "require": {
     "php": "^7.4 || ^8.0",
     "guzzlehttp/guzzle": "^7.9"

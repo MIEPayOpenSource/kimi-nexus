@@ -8,10 +8,22 @@
 - 降低新项目接入 API 的重复工作
 - 提供可扩展的集成目录结构
 
-## 安装
+## 安装（作为库开发）
 
 ```bash
 composer install
+```
+
+## 安装（在其他项目中使用）
+
+```bash
+composer require caobowen/kimi-nexus:^0.1
+```
+
+说明：首次发布前可先使用 `dev-main`。
+
+```bash
+composer require caobowen/kimi-nexus:dev-main
 ```
 
 ## 目录结构
