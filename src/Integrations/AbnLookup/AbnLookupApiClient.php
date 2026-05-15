@@ -39,7 +39,7 @@ final class AbnLookupApiClient
             throw new \InvalidArgumentException('ABN must be exactly 11 digits.');
         }
 
-        $payload = $this->requestJson('/AbnDetails.aspx', [
+        $payload = $this->requestJson('AbnDetails.aspx', [
             'abn' => $cleanAbn,
         ]);
 
@@ -63,7 +63,7 @@ final class AbnLookupApiClient
         }
 
         $maxResults = max(1, min($maxResults, 100));
-        $payload = $this->requestJson('/MatchingNames.aspx', [
+        $payload = $this->requestJson('MatchingNames.aspx', [
             'name' => $keyword,
             'maxResults' => $maxResults,
         ]);
@@ -75,7 +75,7 @@ final class AbnLookupApiClient
             foreach ($matches as &$item) {
                 if (!empty($item['abn']) && is_string($item['abn'])) {
                     try {
-                        $detailsPayload = $this->requestJson('/AbnDetails.aspx', [
+                        $detailsPayload = $this->requestJson('AbnDetails.aspx', [
                             'abn' => $item['abn'],
                         ]);
                         $item['details'] = $this->normalizeAbnDetails($detailsPayload);

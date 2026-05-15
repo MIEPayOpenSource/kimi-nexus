@@ -65,6 +65,8 @@ ABN_LOOKUP_GUID=your-abr-guid
 ABN_LOOKUP_TIMEOUT=20
 ```
 
+说明：`ABN_LOOKUP_BASE_URI` 建议使用 `https://abr.business.gov.au/json/`（末尾带 `/`）。
+
 ```php
 <?php
 
