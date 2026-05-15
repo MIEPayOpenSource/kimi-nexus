@@ -109,8 +109,10 @@ final class AbnLookupApiClient
             throw new ApiException('ABN lookup guid is empty.');
         }
 
+        $url = rtrim($this->config->getBaseUri(), '/') . '/' . ltrim($endpoint, '/');
+
         try {
-            $response = $this->httpClient->request('GET', $endpoint, [
+            $response = $this->httpClient->request('GET', $url, [
                 'query' => array_merge($params, [
                     'guid' => $this->guid,
                     'callback' => self::DEFAULT_CALLBACK,
