@@ -55,6 +55,43 @@ var_dump($result);
 - `BusinessGovtNzGateway::make($config)`: 快速创建客户端入口
 - `BusinessGovtNzApiClient::helloWorld($path = '/helloworld')`: HelloWorld 本地示例接口（固定返回）
 
+## ABN Lookup（Australia ABR）
+
+可选环境变量示例：
+
+```dotenv
+ABN_LOOKUP_BASE_URI=https://abr.business.gov.au/json/
+ABN_LOOKUP_GUID=your-abr-guid
+ABN_LOOKUP_TIMEOUT=20
+```
+
+```php
+<?php
+
+use KimiNexus\Core\ApiConfig;
+use KimiNexus\Integrations\AbnLookup\AbnLookupGateway;
+
+$baseUri = getenv('ABN_LOOKUP_BASE_URI') ?: 'https://abr.business.gov.au/json/';
+$timeout = (float) (getenv('ABN_LOOKUP_TIMEOUT') ?: 20);
+$guid = (string) getenv('ABN_LOOKUP_GUID');
+
+$config = new ApiConfig($baseUri, null, $timeout);
+
+$client = AbnLookupGateway::make($config, $guid);
+
+// 1) 按 ABN 查询
+$byAbn = $client->searchByAbn('51 824 753 556');
+
+// 2) 按名称模糊查询
+$byName = $client->searchByName('COMMONWEALTH BANK', 20, false);
+```
+
+已提供入口：
+
+- `AbnLookupGateway::make($config, $guid)`: 创建 ABN Lookup 客户端
+- `AbnLookupApiClient::searchByAbn($abn)`: 按 ABN 查询
+- `AbnLookupApiClient::searchByName($name, $maxResults = 20, $withDetails = false)`: 按企业名查询
+
 ## 后续建议
 
 - 为每个供应商建立独立目录：`src/Integrations/{Vendor}`
