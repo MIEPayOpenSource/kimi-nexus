@@ -48,12 +48,33 @@ $client = BusinessGovtNzGateway::make($config);
 $result = $client->helloWorld();
 
 var_dump($result);
+
+// NZBN 按名称搜索实体
+$entities = $client->searchEntitiesByName('acme', [
+    'entity_status' => ['Registered', 'VoluntaryAdministration'],
+    'entity_type' => ['NZCompany', 'OverseasCompany'],
+    'industry_code' => 'M692250',
+    'page' => 0,
+    'page_size' => 20,
+]);
+
+var_dump($entities);
+
+// NZBN 查单个实体详情
+$entity = $client->viewEntityByNzbn('9429040000000', [
+    'request_id' => '2a444f3f-a486-4f7c-9bcf-e02095fd3576', // 可选，对应 api-business-govt-nz-Request-Id
+    'if_none_match' => 'W/"previous-etag"', // 可选，对应 If-None-Match
+]);
+
+var_dump($entity);
 ```
 
 ## 已提供的 Business.govt.nz 入口
 
 - `BusinessGovtNzGateway::make($config)`: 快速创建客户端入口
 - `BusinessGovtNzApiClient::helloWorld($path = '/helloworld')`: HelloWorld 本地示例接口（固定返回）
+- `BusinessGovtNzApiClient::searchEntitiesByName($searchTerm, $filters = [])`: 调用 `GET /gateway/nzbn/v5/entities` 进行实体名称搜索
+- `BusinessGovtNzApiClient::viewEntityByNzbn($nzbn, $options = [])`: 调用 `GET /gateway/nzbn/v5/entities/{nzbn}` 获取实体详情
 
 ## ABN Lookup（Australia ABR）
 
