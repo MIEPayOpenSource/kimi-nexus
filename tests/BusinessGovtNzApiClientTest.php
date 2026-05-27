@@ -68,6 +68,28 @@ final class BusinessGovtNzApiClientTest extends TestCase
         $client->searchEntitiesByName('acme');
     }
 
+    public function testSearchEntitiesByNameUsesSandboxPathWhenBaseUriIsSandbox(): void
+    {
+        $httpClient = $this->createMock(ClientInterface::class);
+        $httpClient->expects($this->once())
+            ->method('request')
+            ->with(
+                'GET',
+                '/sandbox/nzbn/v5/entities',
+                [
+                    'query' => [
+                        'search-term' => 'acme',
+                    ],
+                ]
+            )
+            ->willReturn(new Response(200, [], '{"items":[],"totalItems":0}'));
+
+        $client = new BusinessGovtNzApiClient($httpClient, new ApiConfig('https://api.business.govt.nz/sandbox'));
+        $result = $client->searchEntitiesByName('acme');
+
+        $this->assertSame(200, $result['status_code']);
+    }
+
     public function testViewEntityByNzbnBuildsPathAndHeaders(): void
     {
         $httpClient = $this->createMock(ClientInterface::class);

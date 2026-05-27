@@ -87,6 +87,7 @@ BUSINESS_GOVTNZ_SECONDARY_KEY=your-secondary-key
 说明：
 - NZBN API 认证关键头是 `Ocp-Apim-Subscription-Key`。
 - 若你把 key 放在 `ApiConfig` 第 2 个参数（`apiKey`）里，`BusinessGovtNzGateway` 现在也会自动兼容映射到 `Ocp-Apim-Subscription-Key`。
+- 若使用 Sandbox，请将 `BUSINESS_GOVTNZ_BASE_URI` 设置为 `https://api.business.govt.nz/sandbox`（SDK 会自动走 `/sandbox/nzbn/v5/...` 路径）。
 
 ## 已提供的 Business.govt.nz 入口
 

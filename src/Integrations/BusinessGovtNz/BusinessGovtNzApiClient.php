@@ -11,7 +11,7 @@ use KimiNexus\Core\ApiException;
 
 final class BusinessGovtNzApiClient
 {
-    private const ENTITIES_SEARCH_PATH = '/gateway/nzbn/v5/entities';
+    private const ENTITIES_RESOURCE_PATH = '/nzbn/v5/entities';
 
     /** @var ClientInterface */
     private $httpClient;
@@ -86,8 +86,10 @@ final class BusinessGovtNzApiClient
             $query['page-size'] = $pageSize;
         }
 
+        $path = $this->buildNzbnPath(self::ENTITIES_RESOURCE_PATH);
+
         try {
-            $response = $this->httpClient->request('GET', self::ENTITIES_SEARCH_PATH, [
+            $response = $this->httpClient->request('GET', $path, [
                 'query' => $query,
             ]);
         } catch (GuzzleException $e) {
@@ -133,7 +135,7 @@ final class BusinessGovtNzApiClient
             throw new \InvalidArgumentException('nzbn is required.');
         }
 
-        $path = self::ENTITIES_SEARCH_PATH . '/' . rawurlencode($entityNzbn);
+        $path = $this->buildNzbnPath(self::ENTITIES_RESOURCE_PATH . '/' . rawurlencode($entityNzbn));
         $headers = $this->buildViewEntityHeaders($options);
         $requestOptions = [];
         if (count($headers) > 0) {
@@ -302,5 +304,16 @@ final class BusinessGovtNzApiClient
         }
 
         return $headers;
+    }
+
+    private function buildNzbnPath(string $resourcePath): string
+    {
+        $baseUri = strtolower(rtrim($this->config->getBaseUri(), '/'));
+        $prefix = '/gateway';
+        if (substr($baseUri, -8) === '/sandbox') {
+            $prefix = '/sandbox';
+        }
+
+        return $prefix . $resourcePath;
     }
 }
