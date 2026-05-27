@@ -40,7 +40,13 @@ composer require caobowen/kimi-nexus:dev-main
 use KimiNexus\Core\ApiConfig;
 use KimiNexus\Integrations\BusinessGovtNz\BusinessGovtNzGateway;
 
-$config = new ApiConfig('https://api.business.govt.nz/');
+$baseUri = getenv('BUSINESS_GOVTNZ_BASE_URI') ?: 'https://api.business.govt.nz/';
+$timeout = (float) (getenv('BUSINESS_GOVTNZ_TIMEOUT') ?: 20);
+$subscriptionKey = getenv('BUSINESS_GOVTNZ_PRIMARY_KEY') ?: getenv('BUSINESS_GOVTNZ_SECONDARY_KEY');
+
+$config = new ApiConfig($baseUri, null, $timeout, [
+    'Ocp-Apim-Subscription-Key' => (string) $subscriptionKey,
+]);
 
 $client = BusinessGovtNzGateway::make($config);
 
@@ -68,6 +74,19 @@ $entity = $client->viewEntityByNzbn('9429040000000', [
 
 var_dump($entity);
 ```
+
+可选环境变量示例：
+
+```dotenv
+BUSINESS_GOVTNZ_BASE_URI=https://api.business.govt.nz/
+BUSINESS_GOVTNZ_TIMEOUT=20
+BUSINESS_GOVTNZ_PRIMARY_KEY=your-primary-key
+BUSINESS_GOVTNZ_SECONDARY_KEY=your-secondary-key
+```
+
+说明：
+- NZBN API 认证关键头是 `Ocp-Apim-Subscription-Key`。
+- 若你把 key 放在 `ApiConfig` 第 2 个参数（`apiKey`）里，`BusinessGovtNzGateway` 现在也会自动兼容映射到 `Ocp-Apim-Subscription-Key`。
 
 ## 已提供的 Business.govt.nz 入口
 
