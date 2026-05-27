@@ -75,26 +75,83 @@ $entity = $client->viewEntityByNzbn('9429040000000', [
 var_dump($entity);
 ```
 
-可选环境变量示例：
+## Business.govt.nz 环境变量
+
+建议在 `.env` 中配置以下变量。
+
+必填变量：
+
+```dotenv
+BUSINESS_GOVTNZ_PRIMARY_KEY=your-primary-key
+```
+
+选填变量：
 
 ```dotenv
 BUSINESS_GOVTNZ_BASE_URI=https://api.business.govt.nz/
 BUSINESS_GOVTNZ_TIMEOUT=20
-BUSINESS_GOVTNZ_PRIMARY_KEY=your-primary-key
 BUSINESS_GOVTNZ_SECONDARY_KEY=your-secondary-key
 ```
 
 说明：
+- `BUSINESS_GOVTNZ_PRIMARY_KEY`：首选订阅 key（必填）。
+- `BUSINESS_GOVTNZ_SECONDARY_KEY`：主 key 不可用时的回退 key（可选）。
+- `BUSINESS_GOVTNZ_BASE_URI`：
+  - 生产环境：`https://api.business.govt.nz/`
+  - Sandbox：`https://api.business.govt.nz/sandbox`
+- `BUSINESS_GOVTNZ_TIMEOUT`：请求超时秒数（默认 `20`）。
 - NZBN API 认证关键头是 `Ocp-Apim-Subscription-Key`。
-- 若你把 key 放在 `ApiConfig` 第 2 个参数（`apiKey`）里，`BusinessGovtNzGateway` 现在也会自动兼容映射到 `Ocp-Apim-Subscription-Key`。
-- 若使用 Sandbox，请将 `BUSINESS_GOVTNZ_BASE_URI` 设置为 `https://api.business.govt.nz/sandbox`（SDK 会自动走 `/sandbox/nzbn/v5/...` 路径）。
+- 若你把 key 放在 `ApiConfig` 第 2 个参数（`apiKey`）里，`BusinessGovtNzGateway` 会自动兼容映射到 `Ocp-Apim-Subscription-Key`。
+
+## Business.govt.nz 调用指引
+
+1. 在环境变量中设置 key（至少 `BUSINESS_GOVTNZ_PRIMARY_KEY`）。
+2. 根据环境设置 `BUSINESS_GOVTNZ_BASE_URI`：
+   - 生产：`https://api.business.govt.nz/`
+   - Sandbox：`https://api.business.govt.nz/sandbox`
+3. 用 `BusinessGovtNzGateway::make($config)` 创建客户端。
+4. 先调用 `searchEntitiesByName()` 检索 NZBN，再调用 `viewEntityByNzbn()` 拉实体详情。
+5. 若返回 `401 missing subscription key`，优先检查：
+   - key 是否为空
+   - `BASE_URI` 与 key 所属环境是否匹配（生产 key 对生产地址，sandbox key 对 sandbox 地址）
+
+最小调用示例（搜索 + 详情）：
+
+```php
+<?php
+
+use KimiNexus\Core\ApiConfig;
+use KimiNexus\Integrations\BusinessGovtNz\BusinessGovtNzGateway;
+
+$baseUri = getenv('BUSINESS_GOVTNZ_BASE_URI') ?: 'https://api.business.govt.nz/';
+$timeout = (float) (getenv('BUSINESS_GOVTNZ_TIMEOUT') ?: 20);
+$subscriptionKey = getenv('BUSINESS_GOVTNZ_PRIMARY_KEY') ?: getenv('BUSINESS_GOVTNZ_SECONDARY_KEY');
+
+$config = new ApiConfig($baseUri, null, $timeout, [
+    'Ocp-Apim-Subscription-Key' => (string) $subscriptionKey,
+]);
+
+$client = BusinessGovtNzGateway::make($config);
+
+$entities = $client->searchEntitiesByName('acme', [
+    'entity_status' => ['Registered'],
+    'page' => 0,
+    'page_size' => 5,
+]);
+
+$firstNzbn = $entities['data']['items'][0]['nzbn'] ?? null;
+if ($firstNzbn !== null) {
+    $detail = $client->viewEntityByNzbn($firstNzbn);
+    var_dump($detail);
+}
+```
 
 ## 已提供的 Business.govt.nz 入口
 
 - `BusinessGovtNzGateway::make($config)`: 快速创建客户端入口
 - `BusinessGovtNzApiClient::helloWorld($path = '/helloworld')`: HelloWorld 本地示例接口（固定返回）
-- `BusinessGovtNzApiClient::searchEntitiesByName($searchTerm, $filters = [])`: 调用 `GET /gateway/nzbn/v5/entities` 进行实体名称搜索
-- `BusinessGovtNzApiClient::viewEntityByNzbn($nzbn, $options = [])`: 调用 `GET /gateway/nzbn/v5/entities/{nzbn}` 获取实体详情
+- `BusinessGovtNzApiClient::searchEntitiesByName($searchTerm, $filters = [])`: 调用 `GET /{gateway|sandbox}/nzbn/v5/entities` 进行实体名称搜索
+- `BusinessGovtNzApiClient::viewEntityByNzbn($nzbn, $options = [])`: 调用 `GET /{gateway|sandbox}/nzbn/v5/entities/{nzbn}` 获取实体详情
 
 ## ABN Lookup（Australia ABR）
 
