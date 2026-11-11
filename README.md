@@ -192,6 +192,80 @@ $byName = $client->searchByName('COMMONWEALTH BANK', 20, false);
 - `AbnLookupApiClient::searchByAbn($abn)`: 按 ABN 查询
 - `AbnLookupApiClient::searchByName($name, $maxResults = 20, $withDetails = false)`: 按企业名查询
 
+## Veriff KYC：人脸比对与活体检测
+
+`VeriffGateway` 封装了 Demo 的「创建会话 → 打开 Veriff 拍照页 → 查询结果」流程。你当前后台截图所示的证件与自拍核验，可直接使用 `createSession()` 创建会话；用户按 Veriff 页面提示拍摄证件和自拍，服务端再用 `getDecision()` 查询结果。Veriff 的 [Document + Selfie IDV](https://devdocs.veriff.com/docs/document-selfie-idv) 用于综合身份核验；其[身份核验产品说明](https://www.veriff.com/pricing)列出了证件检查、人脸比对和被动活体检测。
+
+在 KYC 中可以把 Veriff 的最终 `approved` 决定作为该次身份核验通过的信号。`getDecision()` 返回的是整次核验的决定，不保证包含可独立读取的“活体分数”或“人脸相似度”。截图中的示例会话及 API 连通性测试也不能证明实际用户的活体检测已端到端完成；上线前应使用当前集成完成一次真实拍摄，确认 Veriff 页面要求自拍、决定结果正常，并核对该集成启用的检查项。
+
+这里的 `vendorData` / `endUserId` 是可选的业务用户标识，便于将 Veriff 会话关联到你系统中的用户；它们**不是**查询本次证件与自拍核验结果的前提。后台显示 `Vendor Data: -` 的会话仍可有 `Approved` 结果。
+
+### 配置
+
+将以下值放到调用方项目的服务端环境变量中，使用证件与自拍核验集成的实际凭据替换占位符：
+
+```dotenv
+VERIFF_BASE_URL=https://api-saas.veriff.com
+VERIFF_API_KEY=your-veriff-integration-api-key
+VERIFF_SHARED_SECRET=your-veriff-integration-shared-secret
+VERIFF_TIMEOUT=15
+```
+
+`VERIFF_BASE_URL` 应以 Veriff 为该集成分配的 API 地址为准。不要将 API Key 或 Shared Secret 放进网页代码、移动端代码或提交到仓库。
+
+### 创建核验会话
+
+```php
+<?php
+
+use KimiNexus\Core\ApiConfig;
+use KimiNexus\Integrations\Veriff\VeriffGateway;
+
+$client = VeriffGateway::make(
+    new ApiConfig(
+        getenv('VERIFF_BASE_URL') ?: 'https://api-saas.veriff.com',
+        null,
+        (float) (getenv('VERIFF_TIMEOUT') ?: 15)
+    ),
+    (string) getenv('VERIFF_API_KEY'),
+    (string) getenv('VERIFF_SHARED_SECRET')
+);
+
+$session = $client->createSession();
+$sessionId = $session['id'];
+$verificationUrl = $session['url'];
+
+// 将 $sessionId 与当前登录用户关联并持久化，再将 $verificationUrl 交给该用户的浏览器打开。
+// 如果想在 Veriff 中附带业务用户标识，可改为：$client->createSession(['vendorData' => $opaqueUserId]);
+```
+
+### 查询结果
+
+用户在 Veriff 页面完成证件与自拍拍摄后，服务端用保存的会话 ID 查询。结果可能需要稍后才可用；查询接口会验证 Veriff 响应的 HMAC 签名。
+
+```php
+<?php
+
+// $client 按上面的方式创建；$savedSessionId 来自当前用户的服务端记录。
+$decision = $client->getDecision($savedSessionId);
+if ($decision === null) {
+    // 结果尚未就绪，稍后重试。
+} elseif (
+    ($decision['code'] ?? null) === 9001
+    && ($decision['status'] ?? null) === 'approved'
+) {
+    // 本次证件与自拍身份核验通过。
+} else {
+    // 根据 status、code 和 reasonCode 处理失败、重试或过期。
+}
+```
+
+`getDecision(string $sessionId)` 返回完整的 `verification` 对象，尚未出结果时返回 `null`。创建请求与查询请求均带 HMAC 签名，客户端也会校验成功响应的签名。生产环境应只允许当前用户查询自己的会话，不要让浏览器传入任意 session ID 作为核验依据。
+
+### 可选：已录入用户再次刷脸
+
+如果目标是让同一用户以后**不再出示证件，仅自拍登录或复核身份**，那是 Veriff 的 [Biometric Authentication](https://devdocs.veriff.com/docs/biometric-authentication) 产品。它需要已关联的人脸录入与认证集成，以及录入时使用的稳定 `endUserId` 或 `vendorData`。这时才使用 `createBiometricAuthenticationSession(?string $endUserId = null, ?string $vendorData = null)`，并使用认证集成的凭据。已通过的普通核验会话若没有录入标识，不能直接把 Session ID 充当该标识；旧照片迁移需与 Veriff 确认。
+
 ## 后续建议
 
 - 为每个供应商建立独立目录：`src/Integrations/{Vendor}`
